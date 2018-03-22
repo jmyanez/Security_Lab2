@@ -53,7 +53,14 @@ public class CryptoEchoClient {
             // no need to encrypt the initialization vector
             // send the vector as an object
             byte[] iv = cipher.getIV();           
-            objectOutput.writeObject(iv); 
+            objectOutput.writeObject(iv);
+
+            // Now we will receive the iv from the Server to decrypt the message
+            iv = (byte[]) objectInput.readObject();
+            Cipher decryptCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            decryptCipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+
+
             
             System.out.println("Starting messages to the server. Type messages, type BYE to end");            
             boolean done = false;
@@ -71,7 +78,11 @@ public class CryptoEchoClient {
                 } else {
                     // Receive the reply from the server and print it
                     // You need to modify this to handle encrypted reply
-                    System.out.println(in.readLine());
+                    //Receive the reply and get  an ecrypted object
+                    encryptedByte = (byte[]) objectInput.readObject();
+                    String decryptedStr = new String(decryptCipher.doFinal(encryptedByte));
+
+                    System.out.println(decryptedStr);
                 }
             }
         } catch (Exception e) {
