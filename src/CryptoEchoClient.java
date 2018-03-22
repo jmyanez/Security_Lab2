@@ -79,8 +79,8 @@ public class CryptoEchoClient {
                     // Receive the reply from the server and print it
                     // You need to modify this to handle encrypted reply
                     //Receive the reply and get  an ecrypted object
-                    encryptedByte = (byte[]) objectInput.readObject();
-                    String decryptedStr = new String(decryptCipher.doFinal(encryptedByte));
+                    encryptedByte = (byte[]) objectInput.readObject(); //Get the encrypted message
+                    String decryptedStr = new String(decryptCipher.doFinal(encryptedByte)); //Decrypt the received message
 
                     System.out.println(decryptedStr);
                 }

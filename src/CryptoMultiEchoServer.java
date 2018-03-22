@@ -81,9 +81,7 @@ public class CryptoMultiEchoServer {
                 // initialize with a specific vector instead of a random one
                 cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
 
-                //We create a initialization vector for the server also
-                //this time as an encrypter
-
+                //We create a initialization vector for the server also this time as an encrypter
                 Cipher encrypter = Cipher.getInstance("AES/CBC/PKCS5Padding");
                 encrypter.init(Cipher.ENCRYPT_MODE,secretKey);
                 iv = encrypter.getIV();
@@ -101,10 +99,8 @@ public class CryptoMultiEchoServer {
                     // reply to the client with an echo of the string
                     // this reply is not encrypted, you need to modify this
                     // by encrypting the reply
-                    byte[] encryptedMessage = encrypter.doFinal(str.getBytes());
-                    objectOutput.writeObject(encryptedMessage);
-                    //out.println("Echo: " + str);
-                    //out.flush();
+                    byte[] encryptedMessage = encrypter.doFinal(str.getBytes()); //Encrypt message
+                    objectOutput.writeObject(encryptedMessage);// Send message as encrypted object
                     // print the message received from the client
                     System.out.println("Received from session " + id + ": " + str);
                     if (str.trim().equals("BYE")) {
