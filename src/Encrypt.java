@@ -1,3 +1,4 @@
+
 import java.io.*;
 import java.security.*;
 import java.util.Base64;
@@ -17,13 +18,13 @@ class Encrypt {
         File file;
         PublicKey pubKey;
         Cipher cipher;
-        String messageToEncrypt = "Computer Security Spring 2018";
-        System.out.println("The plaintext is: " + messageToEncrypt);       
+        String messageToEncrypt = "Jose Yanez - March,22,18";
+        System.out.println("The plaintext is: " + messageToEncrypt);
         byte[] encryptedByteArray;
         String encryptedString;
 
         // Read public key from file
-        pubKey = PemUtils.readPublicKey("JosepublicKey.pem");
+        pubKey = PemUtils.readPublicKey("JoseYClientpublicKey.pem");
         
         encryptedByteArray = encrypt(pubKey, messageToEncrypt.getBytes());
         encryptedString = Base64.getEncoder().encodeToString(encryptedByteArray);

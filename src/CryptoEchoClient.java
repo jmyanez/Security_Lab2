@@ -81,7 +81,7 @@ public class CryptoEchoClient {
                     //Receive the reply and get  an ecrypted object
                     encryptedByte = (byte[]) objectInput.readObject(); //Get the encrypted message
                     String decryptedStr = new String(decryptCipher.doFinal(encryptedByte)); //Decrypt the received message
-
+                    System.out.print("Decrypted message is: ");
                     System.out.println(decryptedStr);
                 }
             }
