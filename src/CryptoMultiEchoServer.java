@@ -26,7 +26,7 @@ public class CryptoMultiEchoServer {
                 // connection
                 new ClientHandler(incoming, ++sessionID).start();
                 // start() causes the thread to begin execution
-                // the JVM calls the run() method of this thread
+                // the JVM calls the run() method of this threadd
             }
         } catch (Exception e) {
             System.out.println("Error: " + e);

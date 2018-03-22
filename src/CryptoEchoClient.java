@@ -76,7 +76,7 @@ public class CryptoEchoClient {
                     System.out.println("client session ended");
                     done = true;
                 } else {
-                    // Receive the reply from the server and print it
+                    // Receive the reply from the server and printt it
                     // You need to modify this to handle encrypted reply
                     //Receive the reply and get  an ecrypted object
                     encryptedByte = (byte[]) objectInput.readObject(); //Get the encrypted message
