@@ -45,8 +45,7 @@ public class EchoClientSkeleton {
         out.flush();
         // Receive Server certificate
         // Will need to verify the certificate and extract the Server public keys
-        // pkpair[0] = encryption PK
-        // pkpair[1] = signature PK
+
           pkpair = VerifyCert.vCert(in);
 
         try {
@@ -119,6 +118,7 @@ public class EchoClientSkeleton {
         System.arraycopy(serverRandomBytes, 0, sharedSecret, 0, 8);
         System.arraycopy(clientRandomBytes, 0, sharedSecret, 8, 8);
         try {
+
             SecretKeySpec secretKey = new SecretKeySpec(sharedSecret,"AES"); // AES key
 
             //Encryption Cipher creation
@@ -128,7 +128,7 @@ public class EchoClientSkeleton {
             objectOutput.writeObject(iv); // Sending to server Client iv
 
            // Decryption cipher creation
-            iv = (byte[]) objectInput.readObject(); // Receive iv from Server 
+            iv = (byte[]) objectInput.readObject(); // Receive iv from Server  // < ------ AQUI ESTA EL PUTO ERROR :)
             Cipher cipherDec = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipherDec.init(Cipher.DECRYPT_MODE,secretKey,new IvParameterSpec(iv));
 
