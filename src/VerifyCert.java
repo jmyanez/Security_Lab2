@@ -27,7 +27,7 @@ class VerifyCert {
 
         try {
             System.out.println("Reading certificate");
-            input = new BufferedReader(new FileReader("JoseYClientcertificate.txt"));
+            input = new BufferedReader(new FileReader("certificate.txt"));
         } catch (FileNotFoundException e) {
             System.out.println("File not found, " + e);
             return;
@@ -114,7 +114,7 @@ class VerifyCert {
         } catch (IOException e) {
             System.out.println("error occurred while reading the certificate, " + e);
             return null;
-        } 
+        }
         PublicKey[] pkpair = new PublicKey[2];
         // construct the encryption public key retrieved from the certificate
         pkpair[0] = PemUtils.constructPublicKey(encPubKey);

@@ -15,12 +15,15 @@ public class EchoClientSkeleton {
         String host = "cspl000.utep.edu";
         BufferedReader in; // for reading strings from socket
         PrintWriter out;   // for writing strings to socket
-        ObjectInputStream objectInput;   // for reading objects from socket        
+        ObjectInputStream objectInput;   // for reading objects from socket
         ObjectOutputStream objectOutput; // for writing objects to socket
         Cipher cipheRSA, cipherEnc;
         byte[] clientRandomBytes;
         PublicKey[] pkpair;
         Socket socket;
+        VerifyCert verif = new VerifyCert();
+
+
         // Handshake
         try {
             // socket initialization
@@ -36,21 +39,16 @@ public class EchoClientSkeleton {
         out.flush();
         // Receive Server certificate
         // Will need to verify the certificate and extract the Server public keys
-        try {
-            String line = in.readLine();
-            while (!"-----END SIGNATURE-----".equals(line)) {
-                line = in.readLine();
-            }
-        } catch (IOException e) {
-            System.out.println("problem reading the certificate from server");
-            return;
-        }
 
-        try {   
+          pkpair = VerifyCert.vCert(in);
+
+
+        try {
             // read and send certificate to server
             File file = new File("client1Certificate.txt");
             Scanner input = new Scanner(file);
             String line;
+            System.out.println("Sending Cert!!!");
             while (input.hasNextLine()) {
                 line = input.nextLine();
                 out.println(line);
@@ -69,8 +67,8 @@ public class EchoClientSkeleton {
             // receive signature of hash of random bytes from server
             byte[] signatureBytes = (byte[]) objectInput.readObject();
             // will need to verify the signature and decrypt the random bytes
-            
-        } catch (IOException | ClassNotFoundException ex) { 
+
+        } catch (IOException | ClassNotFoundException ex) {
             System.out.println("Problem with receiving random bytes from server");
             return;
         }
@@ -79,7 +77,7 @@ public class EchoClientSkeleton {
         // the next line would initialize the byte array to random values
          new Random().nextBytes(clientRandomBytes);
         // here we leave all bytes to zeroes.
-        // The server shifts to testing mode when receiving all byte 
+        // The server shifts to testing mode when receiving all byte
         // values zeroes and uses all zeroes as shared secret
         try {
             // you need to encrypt and send the the random byte array
@@ -96,15 +94,15 @@ public class EchoClientSkeleton {
             objectOutput.writeObject(encryptedBytes);
             // you need to generate a signature of the hash of the random bytes
             // here, precalculated signature using the client secret key associated with the certificate
-            byte[] signatureBytes = {48, 17, -50, -3, 125, -10, -88, -6, -33, 
-                10, 14, 93, 112, 14, 74, -32, -27, -56, -86, 91, -101, 87, 117, 
-                109, 41, 1, 6, -4, -94, 47, 83, -46, 44, 76, 61, 83, 72, 36, 
-                -127, -44, 5, -77, 121, 19, 107, 91, -123, 31, 123, -22, 114, 
-                -79, 103, 39, 122, -122, 73, -99, -16, 22, 20, 37, 27, 14, 31, 
-                11, 36, 12, -118, 38, 120, 47, 57, -110, -27, -14, 31, -37, 85, 
-                -56, -108, 100, -71, 29, 26, 26, 8, -47, 49, -66, 88, 6, 73, 
-                124, -35, 9, 16, 59, 44, -113, 62, -61, -31, 58, -116, 113, 35, 
-                119, 5, -117, -91, -109, -8, 123, -40, -105, -96, -71, -50, 41, 
+            byte[] signatureBytes = {48, 17, -50, -3, 125, -10, -88, -6, -33,
+                10, 14, 93, 112, 14, 74, -32, -27, -56, -86, 91, -101, 87, 117,
+                109, 41, 1, 6, -4, -94, 47, 83, -46, 44, 76, 61, 83, 72, 36,
+                -127, -44, 5, -77, 121, 19, 107, 91, -123, 31, 123, -22, 114,
+                -79, 103, 39, 122, -122, 73, -99, -16, 22, 20, 37, 27, 14, 31,
+                11, 36, 12, -118, 38, 120, 47, 57, -110, -27, -14, 31, -37, 85,
+                -56, -108, 100, -71, 29, 26, 26, 8, -47, 49, -66, 88, 6, 73,
+                124, -35, 9, 16, 59, 44, -113, 62, -61, -31, 58, -116, 113, 35,
+                119, 5, -117, -91, -109, -8, 123, -40, -105, -96, -71, -50, 41,
                 78, -113, -32, -75, 36, -29, 89, -51};
             objectOutput.writeObject(signatureBytes);
         } catch (IOException e) {
@@ -112,27 +110,27 @@ public class EchoClientSkeleton {
             return;
         }
         // initialize the shared secret with all zeroes
-        // will need to generate from a combination of the server and 
+        // will need to generate from a combination of the server and
         // the client random bytes generated
         byte[] sharedSecret = new byte[16];
         //System.arraycopy(serverRandomBytes, 0, sharedSecret, 0, 8);
         //System.arraycopy(clientRandomBytes, 8, sharedSecret, 8, 8);
         try {
             // we will use AES encryption, CBC chaining and PCS5 block padding
-            cipherEnc = Cipher.getInstance("AES/CBC/PKCS5Padding");            
+            cipherEnc = Cipher.getInstance("AES/CBC/PKCS5Padding");
             // generate an AES key derived from randomBytes array
             SecretKeySpec secretKey = new SecretKeySpec(sharedSecret, "AES");
             cipherEnc.init(Cipher.ENCRYPT_MODE, secretKey);
             byte[] iv = cipherEnc.getIV();
             objectOutput.writeObject(iv);
-        } catch (IOException | NoSuchAlgorithmException 
+        } catch (IOException | NoSuchAlgorithmException
                 | NoSuchPaddingException | InvalidKeyException e) {
             System.out.println("error setting up the AES encryption");
             return;
         }
         try {
             // Encrypted communication
-            System.out.println("Starting messages to the server. Type messages, type BYE to end");    
+            System.out.println("Starting messages to the server. Type messages, type BYE to end");
             Scanner userInput = new Scanner(System.in);
             boolean done = false;
             while (!done) {
@@ -150,6 +148,7 @@ public class EchoClientSkeleton {
                     // Wait for reply from server,
                     encryptedBytes = (byte[]) objectInput.readObject();
                     // will need to decrypt and print the reply to the screen
+                    System.out.println(encryptedBytes);
                     System.out.println("Encrypted echo received, but not decrypted");
                 }
             }            
