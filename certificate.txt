@@ -1,4 +1,4 @@
------BEGIN INFOsdsdsdsRMATION-----
+-----BEGIN INFORMATION-----
 Date: 19-Mar-18
 Name: Jose Yanez
 Username: jmyanez

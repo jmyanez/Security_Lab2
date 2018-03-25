@@ -24,7 +24,7 @@ class Encrypt {
         String encryptedString;
 
         // Read public key from file
-        pubKey = PemUtils.readPublicKey("JoseYClientpublicKey.pem");
+        pubKey = PemUtils.readPublicKey("JoseYServerCertpublicKey.pem");
         
         encryptedByteArray = encrypt(pubKey, messageToEncrypt.getBytes());
         encryptedString = Base64.getEncoder().encodeToString(encryptedByteArray);
@@ -57,5 +57,20 @@ class Encrypt {
             System.out.println("Encryption error");
             return null;
         }    
+    }
+
+    public byte[] encrypt2(PublicKey pubk,byte[] myString) {
+        Cipher cipher;
+        byte[] encryption;
+
+        try {
+            cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, pubk);
+            encryption = cipher.doFinal(myString);
+            return encryption;
+        } catch (NoSuchAlgorithmException|BadPaddingException |IllegalBlockSizeException | NoSuchPaddingException | InvalidKeyException e) {
+            System.out.println("Could not initialize encryption");
+        }
+        return null;
     }
 }

@@ -4,12 +4,18 @@ import java.security.*;
 import java.util.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
+import java.security.MessageDigest;
 
 public class EchoClientSkeleton {
     // This code includes socket code originally provided
     // by Dr. Yoonsik Cheon at least 10 years ago.
-    // This version used for Computer Security, Spring 2018.    
+    // This version used for Computer Security, Spring 2018.
+
+
+
     public static void main(String[] args) {
+
+
 
         //String host = "localhost";
         String host = "cspl000.utep.edu";
@@ -21,8 +27,8 @@ public class EchoClientSkeleton {
         byte[] clientRandomBytes;
         PublicKey[] pkpair;
         Socket socket;
-        VerifyCert verif = new VerifyCert();
-
+        VerifyCert verif = new VerifyCert(); //New instance to  call verCert
+        byte[] serverRandomBytes;
 
         // Handshake
         try {
@@ -39,13 +45,13 @@ public class EchoClientSkeleton {
         out.flush();
         // Receive Server certificate
         // Will need to verify the certificate and extract the Server public keys
-
+        // pkpair[0] = encryption PK
+        // pkpair[1] = signature PK
           pkpair = VerifyCert.vCert(in);
-
 
         try {
             // read and send certificate to server
-            File file = new File("client1Certificate.txt");
+            File file = new File("JoseYServercertificate.txt");
             Scanner input = new Scanner(file);
             String line;
             System.out.println("Sending Cert!!!");
@@ -67,6 +73,12 @@ public class EchoClientSkeleton {
             // receive signature of hash of random bytes from server
             byte[] signatureBytes = (byte[]) objectInput.readObject();
             // will need to verify the signature and decrypt the random bytes
+            Decrypt decr = new Decrypt();
+            serverRandomBytes = decr.decrytp2(encryptedBytes);
+            System.out.println("Decrypted bytes " + serverRandomBytes);
+            byte[] decryptedBytes = genSHA256(serverRandomBytes);
+            Verify v1 = new Verify();
+            v1.verify(pkpair[1],decryptedBytes,signatureBytes);
 
         } catch (IOException | ClassNotFoundException ex) {
             System.out.println("Problem with receiving random bytes from server");
@@ -81,50 +93,48 @@ public class EchoClientSkeleton {
         // values zeroes and uses all zeroes as shared secret
         try {
             // you need to encrypt and send the the random byte array
-            // here, precalculated encrypted bytes using zeroes as shared secret
-            byte[] encryptedBytes = {-127,-39,2,29,-88,-43,-17,-70,-115,94,-85,
-                -126,-56,97,36,81,106,33,-75,125,-7,89,110,37,-10,19,-70,-112,
-                -19,-103,-109,10,-86,-26,-43,115,-89,49,-6,62,87,-113,82,-93,
-                -125,21,-83,1,-41,83,-104,54,109,-112,118,30,-107,123,62,-34,
-                52,-15,66,119,110,-53,-79,104,-101,50,18,-99,101,-124,-13,-45,
-                121,-48,107,-12,93,85,-12,-92,-83,-75,-123,-51,-60,-20,-34,
-                -105,-86,-23,-105,-49,-42,17,-77,-121,-29,-45,-39,22,-49,-73,
-                110,53,-20,47,8,-10,60,-36,-40,25,27,70,58,-126,-98,61,-13,94,
-                -57,11,96,-57};
-            objectOutput.writeObject(encryptedBytes);
+            Encrypt encr = new Encrypt();
+            byte[] clientEncBytes = encr.encrypt2(pkpair[0],clientRandomBytes);
+            objectOutput.writeObject(clientEncBytes);
+            System.out.println("Random bytes sent");
+
             // you need to generate a signature of the hash of the random bytes
-            // here, precalculated signature using the client secret key associated with the certificate
-            byte[] signatureBytes = {48, 17, -50, -3, 125, -10, -88, -6, -33,
-                10, 14, 93, 112, 14, 74, -32, -27, -56, -86, 91, -101, 87, 117,
-                109, 41, 1, 6, -4, -94, 47, 83, -46, 44, 76, 61, 83, 72, 36,
-                -127, -44, 5, -77, 121, 19, 107, 91, -123, 31, 123, -22, 114,
-                -79, 103, 39, 122, -122, 73, -99, -16, 22, 20, 37, 27, 14, 31,
-                11, 36, 12, -118, 38, 120, 47, 57, -110, -27, -14, 31, -37, 85,
-                -56, -108, 100, -71, 29, 26, 26, 8, -47, 49, -66, 88, 6, 73,
-                124, -35, 9, 16, 59, 44, -113, 62, -61, -31, 58, -116, 113, 35,
-                119, 5, -117, -91, -109, -8, 123, -40, -105, -96, -71, -50, 41,
-                78, -113, -32, -75, 36, -29, 89, -51};
-            objectOutput.writeObject(signatureBytes);
+
+            byte[] hashedRandomBytes = genSHA256(clientRandomBytes);
+            PrivateKey pk = PemUtils.readPrivateKey("JoseYServerCertprivateKey.pem");
+            byte[] hashSignature = Sign.sign(pk, hashedRandomBytes);
+            objectOutput.writeObject(hashSignature);
+
+            System.out.println("Secret Sent!");
+
         } catch (IOException e) {
             System.out.println("error computing or sending the signature for random bytes");
             return;
         }
-        // initialize the shared secret with all zeroes
+        // initialize the shared secret with our random generated bytes
         // will need to generate from a combination of the server and
         // the client random bytes generated
         byte[] sharedSecret = new byte[16];
-        //System.arraycopy(serverRandomBytes, 0, sharedSecret, 0, 8);
-        //System.arraycopy(clientRandomBytes, 8, sharedSecret, 8, 8);
+        System.arraycopy(serverRandomBytes, 0, sharedSecret, 0, 8);
+        System.arraycopy(clientRandomBytes, 8, sharedSecret, 8, 8);
         try {
-            // we will use AES encryption, CBC chaining and PCS5 block padding
+
+            //Decryption cipher creation
+            Cipher cipherDec = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            SecretKeySpec secretKey = new SecretKeySpec(sharedSecret,"AES"); // AES key
+            byte[] iv = (byte[]) objectInput.readObject();
+            cipherDec.init(Cipher.DECRYPT_MODE,secretKey,new IvParameterSpec(iv));
+
+            //Encryption Cipher creation
             cipherEnc = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            // generate an AES key derived from randomBytes array
-            SecretKeySpec secretKey = new SecretKeySpec(sharedSecret, "AES");
-            cipherEnc.init(Cipher.ENCRYPT_MODE, secretKey);
-            byte[] iv = cipherEnc.getIV();
+            cipherEnc.init(Cipher.ENCRYPT_MODE,secretKey);
+            iv = cipherEnc.getIV();
             objectOutput.writeObject(iv);
+
+            System.out.println("Ciphers Sent!!!");
+
         } catch (IOException | NoSuchAlgorithmException
-                | NoSuchPaddingException | InvalidKeyException e) {
+                | NoSuchPaddingException|InvalidParameterException | InvalidAlgorithmParameterException | ClassNotFoundException | InvalidKeyException e) {
             System.out.println("error setting up the AES encryption");
             return;
         }
@@ -157,4 +167,17 @@ public class EchoClientSkeleton {
             System.out.println("error in encrypted communication with server");
         }
     }
+    public static byte[] genSHA256(byte[] myHash){
+        try {
+            MessageDigest hash = MessageDigest.getInstance("SHA-256");
+            hash.update(myHash);
+            return hash.digest();
+        }
+        catch (NoSuchAlgorithmException e){
+            System.out.println("No such alg found");
+            return null;
+        }
+    }
 }
+
+
