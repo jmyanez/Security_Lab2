@@ -134,6 +134,7 @@ class VerifyCert {
             sig.update(contents.getBytes());
             if (sig.verify(Base64.getDecoder().decode(signature))) {
                 //Signature verification succeeded
+                System.out.println("Signature Verified");
                 return pkpair;
             } else {
                 //Signature verification failed

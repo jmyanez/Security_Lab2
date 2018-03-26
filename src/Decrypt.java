@@ -60,7 +60,7 @@ class Decrypt {
         byte[] myArray;
         // get the private key from file
         pk = PemUtils.readPrivateKey("JoseYServerCertprivateKey.pem");
-        System.out.println("The enccrypted bytes are: " + encryptedBytes);
+        System.out.println("The encrypted bytes are: " + encryptedBytes[1]);
 
         try {
 

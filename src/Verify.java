@@ -40,6 +40,7 @@ public class Verify {
             Signature sig = Signature.getInstance("SHA1withRSA");
             sig.initVerify(pubKey);
             sig.update(message);
+            System.out.println("Verification Succeded!");
             return sig.verify(signature);
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             System.out.println("problem verifying signature: " + e);

@@ -38,6 +38,7 @@ class Sign {
             sig.initSign(privKey);
             sig.update(bytes);
             signature = sig.sign();
+            System.out.println("Signature was succesfully done!");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             System.out.println("Error attempting to sign");
             return null;

@@ -23,7 +23,7 @@ public class EchoClientSkeleton {
         PrintWriter out;   // for writing strings to socket
         ObjectInputStream objectInput;   // for reading objects from socket
         ObjectOutputStream objectOutput; // for writing objects to socket
-        Cipher cipheRSA, cipherEnc, cipherDec;
+        Cipher  cipherEnc, cipherDec;
         byte[] clientRandomBytes;
         PublicKey[] pkpair;
         Socket socket;
@@ -32,10 +32,11 @@ public class EchoClientSkeleton {
 
         // Handshake
         try {
-            // socket initialization
+            // socket initialization 1
             socket = new Socket(host, 8008);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+            out.flush();
         } catch (IOException e) {
             System.out.println("socket initialization error");
             return;
@@ -45,11 +46,14 @@ public class EchoClientSkeleton {
         out.flush();
         // Receive Server certificate
         // Will need to verify the certificate and extract the Server public keys
+        //pk[0] server publi
+        //pk[1] signature public
 
-          pkpair = VerifyCert.vCert(in);
+          pkpair = VerifyCert.vCert(in); // Certificate received and verified 2,3
+
 
         try {
-            // read and send certificate to server
+            // read and send certificate to server   4,5
             File file = new File("JoseYServercertificate.txt");
             Scanner input = new Scanner(file);
             String line;
@@ -67,30 +71,30 @@ public class EchoClientSkeleton {
             // initialize object streams
             objectOutput = new ObjectOutputStream(socket.getOutputStream());
             objectInput = new ObjectInputStream(socket.getInputStream());
-            // receive encrypted random bytes from server
+            // receive encrypted random bytes from server 6,7,8
             byte[] encryptedBytes = (byte[]) objectInput.readObject();
             // receive signature of hash of random bytes from server
             byte[] signatureBytes = (byte[]) objectInput.readObject();
-            // will need to verify the signature and decrypt the random bytes
+            // will need to verify the signature and decrypt the random bytes 8
             Decrypt decr = new Decrypt();
             serverRandomBytes = decr.decrytp2(encryptedBytes);
-            System.out.println("Decrypted bytes " + serverRandomBytes);
-            byte[] decryptedBytes = genSHA256(serverRandomBytes);
+            System.out.println("Decrypted bytes " + serverRandomBytes[0]);
+            byte[] hashedDecryptedBytes = genSHA256(serverRandomBytes);
             Verify v1 = new Verify();
-            v1.verify(pkpair[1],decryptedBytes,signatureBytes);
+            v1.verify(pkpair[1],hashedDecryptedBytes,signatureBytes);
 
         } catch (IOException | ClassNotFoundException ex) {
             System.out.println("Problem with receiving random bytes from server");
             return;
         }
-        // generate random bytes for shared secret
+        // generate random bytes for shared secret 9
         clientRandomBytes = new byte[8];
-        // the next line would initialize the byte array to random values
+        // the next line would initialize the byte array to random values 9
         new Random().nextBytes(clientRandomBytes);
         try {
-            // you need to encrypt and send the the random byte array
-            Encrypt encr = new Encrypt();
-            byte[] clientEncBytes = encr.encrypt2(pkpair[0],clientRandomBytes);
+            // you need to encrypt and send the the random byte array 9
+            Encrypt encryptor = new Encrypt();
+            byte[] clientEncBytes = encryptor.encrypt2(pkpair[0],clientRandomBytes);
             objectOutput.writeObject(clientEncBytes);
             System.out.println("Random bytes sent");
 
@@ -100,8 +104,7 @@ public class EchoClientSkeleton {
             PrivateKey pk = PemUtils.readPrivateKey("JoseYServerCertprivateKey.pem");
             byte[] hashSignature = Sign.sign(pk, hashedRandomBytes);
             objectOutput.writeObject(hashSignature);
-
-            System.out.println("Secret Sent!");
+            System.out.println("Hash signed sent!");
 
         } catch (IOException e) {
             System.out.println("error computing or sending the signature for random bytes");
@@ -115,24 +118,27 @@ public class EchoClientSkeleton {
         System.arraycopy(serverRandomBytes, 0, sharedSecret, 0, 8);
         System.arraycopy(clientRandomBytes,  0, sharedSecret, 8, 8);
         try {
-
+            byte[] div;
             SecretKeySpec secretKey = new SecretKeySpec(sharedSecret,"AES"); // AES key
             //Ciphers creation
             cipherEnc = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipherDec = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
-            // Decryption cipher creation
-            byte[] div = (byte[]) objectInput.readObject(); // Receive iv from Server  // < ------ AQUI ESTA EL PUTO ERROR :)
-            cipherDec.init(Cipher.DECRYPT_MODE,secretKey,new IvParameterSpec(div));
+
 
             //Encryption Cipher creation
             cipherEnc.init(Cipher.ENCRYPT_MODE,secretKey);
             byte[] iv = cipherEnc.getIV();
             objectOutput.writeObject(iv); // Sending to server Client iv
+            System.out.println("Client iv sent");
+            // Decryption cipher creation
+            iv  = (byte[])  objectInput.readObject();// Receive iv from Server  // < ------ AQUI ESTA EL ERROR :)
+
+            cipherDec.init(Cipher.DECRYPT_MODE,secretKey,new IvParameterSpec(iv));
+
+            System.out.println("Hotdog");
 
 
-
-            System.out.println("Ciphers Sent!!!");
 
         } catch (IOException | NoSuchAlgorithmException
                 | NoSuchPaddingException|InvalidParameterException | InvalidAlgorithmParameterException | ClassNotFoundException | InvalidKeyException e) {
