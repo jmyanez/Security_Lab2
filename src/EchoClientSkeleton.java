@@ -23,7 +23,7 @@ public class EchoClientSkeleton {
         PrintWriter out;   // for writing strings to socket
         ObjectInputStream objectInput;   // for reading objects from socket
         ObjectOutputStream objectOutput; // for writing objects to socket
-        Cipher cipheRSA, cipherEnc;
+        Cipher cipheRSA, cipherEnc, cipherDec;
         byte[] clientRandomBytes;
         PublicKey[] pkpair;
         Socket socket;
@@ -86,10 +86,7 @@ public class EchoClientSkeleton {
         // generate random bytes for shared secret
         clientRandomBytes = new byte[8];
         // the next line would initialize the byte array to random values
-         new Random().nextBytes(clientRandomBytes);
-        // here we leave all bytes to zeroes.
-        // The server shifts to testing mode when receiving all byte
-        // values zeroes and uses all zeroes as shared secret
+        new Random().nextBytes(clientRandomBytes);
         try {
             // you need to encrypt and send the the random byte array
             Encrypt encr = new Encrypt();
@@ -116,21 +113,22 @@ public class EchoClientSkeleton {
 
         byte[] sharedSecret = new byte[16];
         System.arraycopy(serverRandomBytes, 0, sharedSecret, 0, 8);
-        System.arraycopy(clientRandomBytes, 0, sharedSecret, 8, 8);
+        System.arraycopy(clientRandomBytes,  0, sharedSecret, 8, 8);
         try {
 
             SecretKeySpec secretKey = new SecretKeySpec(sharedSecret,"AES"); // AES key
+            //Ciphers creation
+            cipherEnc = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipherDec = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
+            // Decryption cipher creation
+            byte[] div = (byte[]) objectInput.readObject(); // Receive iv from Server  // < ------ AQUI ESTA EL PUTO ERROR :)
+            cipherDec.init(Cipher.DECRYPT_MODE,secretKey,new IvParameterSpec(div));
 
             //Encryption Cipher creation
-            cipherEnc = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipherEnc.init(Cipher.ENCRYPT_MODE,secretKey);
             byte[] iv = cipherEnc.getIV();
             objectOutput.writeObject(iv); // Sending to server Client iv
-
-           // Decryption cipher creation
-            iv = (byte[]) objectInput.readObject(); // Receive iv from Server  // < ------ AQUI ESTA EL PUTO ERROR :)
-            Cipher cipherDec = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipherDec.init(Cipher.DECRYPT_MODE,secretKey,new IvParameterSpec(iv));
 
 
 
