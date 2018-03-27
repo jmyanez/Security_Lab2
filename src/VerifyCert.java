@@ -26,8 +26,7 @@ class VerifyCert {
         }
 
         try {
-            System.out.println("Reading certificate");
-            input = new BufferedReader(new FileReader("JoseYServercertificate.txt"));
+            input = new BufferedReader(new FileReader("certificate.txt"));
         } catch (FileNotFoundException e) {
             System.out.println("File not found, " + e);
             return;

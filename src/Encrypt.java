@@ -18,17 +18,16 @@ class Encrypt {
         File file;
         PublicKey pubKey;
         Cipher cipher;
-        String messageToEncrypt = "Jose Yanez - March,22,18";
-        System.out.println("The plaintext is: " + messageToEncrypt);
+        String messageToEncrypt = "Jose Yanez - March,25,18";
+        //System.out.println("The plaintext is: " + messageToEncrypt);
         byte[] encryptedByteArray;
         String encryptedString;
 
         // Read public key from file
-        pubKey = PemUtils.readPublicKey("JoseYServerCertpublicKey.pem");
+        pubKey = PemUtils.readPublicKey("JYServerEncryptpublicKey.pem");
         
         encryptedByteArray = encrypt(pubKey, messageToEncrypt.getBytes());
-        encryptedString = Base64.getEncoder().encodeToString(encryptedByteArray);
-        System.out.println("The encrypted string is: " + encryptedString);
+        encryptedString = Base64.getEncoder().encodeToString(encryptedByteArray); System.out.println("The encrypted string is: " + encryptedString);
 
         file = new File("encryptedMessage.txt");
         try (PrintWriter output = new PrintWriter(file)) {

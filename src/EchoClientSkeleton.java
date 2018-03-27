@@ -54,7 +54,7 @@ public class EchoClientSkeleton {
 
         try {
             // read and send certificate to server   4,5
-            File file = new File("JoseYServercertificate.txt");
+            File file = new File("certificate.txt");
             Scanner input = new Scanner(file);
             String line;
             System.out.println("Sending Cert!!!");
@@ -78,7 +78,7 @@ public class EchoClientSkeleton {
             // will need to verify the signature and decrypt the random bytes 8
             Decrypt decr = new Decrypt();
             serverRandomBytes = decr.decrytp2(encryptedBytes);
-            System.out.println("Decrypted bytes " + serverRandomBytes[0]);
+            //System.out.println("Decrypted bytes " + serverRandomBytes[0]);
             byte[] hashedDecryptedBytes = genSHA256(serverRandomBytes);
             Verify v1 = new Verify();
             v1.verify(pkpair[1],hashedDecryptedBytes,signatureBytes);
@@ -96,12 +96,11 @@ public class EchoClientSkeleton {
             Encrypt encryptor = new Encrypt();
             byte[] clientEncBytes = encryptor.encrypt2(pkpair[0],clientRandomBytes);
             objectOutput.writeObject(clientEncBytes);
-            System.out.println("Random bytes sent");
 
             // you need to generate a signature of the hash of the random bytes
 
             byte[] hashedRandomBytes = genSHA256(clientRandomBytes);
-            PrivateKey pk = PemUtils.readPrivateKey("JoseYServerCertprivateKey.pem");
+            PrivateKey pk = PemUtils.readPrivateKey("JYServerSignprivateKey.pem");
             byte[] hashSignature = Sign.sign(pk, hashedRandomBytes);
             objectOutput.writeObject(hashSignature);
             System.out.println("Hash signed sent!");
@@ -118,7 +117,6 @@ public class EchoClientSkeleton {
         System.arraycopy(serverRandomBytes, 0, sharedSecret, 0, 8);
         System.arraycopy(clientRandomBytes,  0, sharedSecret, 8, 8);
         try {
-            byte[] div;
             SecretKeySpec secretKey = new SecretKeySpec(sharedSecret,"AES"); // AES key
             //Ciphers creation
             cipherEnc = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -130,19 +128,15 @@ public class EchoClientSkeleton {
             cipherEnc.init(Cipher.ENCRYPT_MODE,secretKey);
             byte[] iv = cipherEnc.getIV();
             objectOutput.writeObject(iv); // Sending to server Client iv
-            System.out.println("Client iv sent");
+
             // Decryption cipher creation
+
             iv  = (byte[])  objectInput.readObject();// Receive iv from Server  // < ------ AQUI ESTA EL ERROR :)
-
             cipherDec.init(Cipher.DECRYPT_MODE,secretKey,new IvParameterSpec(iv));
-
-            System.out.println("Hotdog");
-
-
-
         } catch (IOException | NoSuchAlgorithmException
-                | NoSuchPaddingException|InvalidParameterException | InvalidAlgorithmParameterException | ClassNotFoundException | InvalidKeyException e) {
+                | NoSuchPaddingException|InvalidParameterException |ClassNotFoundException |InvalidAlgorithmParameterException  | InvalidKeyException e) {
             System.out.println("error setting up the AES encryption");
+            e.printStackTrace();
             return;
         }
         try {
@@ -164,9 +158,10 @@ public class EchoClientSkeleton {
                 } else {
                     // Wait for reply from server,
                     encryptedBytes = (byte[]) objectInput.readObject();
+                    String str = new String(cipherDec.doFinal(encryptedBytes));
                     // will need to decrypt and print the reply to the screen
-                    System.out.println(encryptedBytes);
-                    System.out.println("Encrypted echo received, but not decrypted");
+                    System.out.println(str);
+                    System.out.println("Encrypted echo received,and decrypted");
                 }
             }
         } catch (IllegalBlockSizeException | BadPaddingException

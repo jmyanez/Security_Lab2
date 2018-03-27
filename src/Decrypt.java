@@ -21,7 +21,7 @@ class Decrypt {
         String encryptedString, decryptedString;
 
         // get the private key from file
-        privKey = PemUtils.readPrivateKey("JoseYServerCertprivateKey.pem");
+        privKey = PemUtils.readPrivateKey("JYServerPrivateDecryptKey.pem");
 
         // get the encrypted Message
         try {
@@ -59,8 +59,8 @@ class Decrypt {
         Cipher cipher;
         byte[] myArray;
         // get the private key from file
-        pk = PemUtils.readPrivateKey("JoseYServerCertprivateKey.pem");
-        System.out.println("The encrypted bytes are: " + encryptedBytes[1]);
+        pk = PemUtils.readPrivateKey("JYServerPrivateDecryptKey.pem");
+        //System.out.println("The encrypted bytes are: " + encryptedBytes[1]);
 
         try {
 
